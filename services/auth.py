@@ -88,8 +88,13 @@ def create_refresh_token(user_id: int) -> RefreshToken:
 def refresh_tokens(old_token: str, db: Session) -> RefreshResult:
     now = datetime.now(timezone.utc)
 
-    token: RefreshToken | None = db.execute(
-        select(RefreshToken).where(RefreshToken.token == old_token)
+    try:
+        token_uuid = uuid.UUID(old_token)
+    except ValueError:
+        raise HTTPException(401, "Invalid refresh token")
+
+    token = db.execute(
+        select(RefreshToken).where(RefreshToken.token == token_uuid)
     ).scalar_one_or_none()
 
     if not token:
